@@ -1,0 +1,106 @@
+# =====================================================================
+# compliance-check-archive.yml
+# ---------------------------------------------------------------------
+# 🗂️ Quarterly Archival Verification Workflow (Live)
+# Eckohaus Ltd (Original, 2013–2021)
+# ---------------------------------------------------------------------
+# Runs every January, April, July, and October on UK weekdays only.
+# Queries Companies House API using CH_API_KEY_ARCHIVE.
+# Appends results to orchestration-ledger.md and archives JSON output.
+# =====================================================================
+
+name: Compliance Check (Companies House - Archive Live)
+
+on:
+  workflow_dispatch:  # Manual trigger from Actions tab
+  schedule:
+    - cron: "0 9 1 1,4,7,10 *"  # Run at 09:00 UTC on 1st of Jan, Apr, Jul, Oct
+
+permissions:
+  contents: write  # allow committing ledger and data updates
+
+jobs:
+  check-archive-live:
+    name: Quarterly Archive Verification (Eckohaus Ltd 2013–2021)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load archival metadata
+        id: metadata
+        run: |
+          echo "Loading archival metadata from config/metadata.yml"
+          COMPANY_NAME=$(grep 'name:' config/metadata.yml | awk '{print $2" "$3}')
+          COMPANY_NUMBER=$(grep 'company_number:' config/metadata.yml | awk '{print $2}')
+          echo "company_name=$COMPANY_NAME" >> $GITHUB_OUTPUT
+          echo "company_number=$COMPANY_NUMBER" >> $GITHUB_OUTPUT
+          echo "✅ Loaded archival entity: $COMPANY_NAME ($COMPANY_NUMBER)"
+
+      - name: Check weekday (UK time)
+        id: weekday
+        run: |
+          DAY=$(TZ="Europe/London" date +%u)
+          if [ "$DAY" -gt 5 ]; then
+            echo "🕓 Weekend detected — skipping live verification."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Query Companies House API (Live)
+        if: steps.weekday.outputs.skip == 'false'
+        id: ch_query
+        env:
+          CH_API_KEY: ${{ secrets.CH_API_KEY_ARCHIVE }}
+          COMPANY_NUMBER: ${{ steps.metadata.outputs.company_number }}
+        run: |
+          echo "🔍 Querying Companies House LIVE API for company $COMPANY_NUMBER"
+          AUTH_HEADER=$(echo -n "$CH_API_KEY:" | base64)
+          curl -s -H "Authorization: Basic $AUTH_HEADER" \
+               "https://api.company-information.service.gov.uk/company/$COMPANY_NUMBER" \
+               -o response_archive.json
+
+          if [ ! -s response_archive.json ]; then
+            echo "❌ No response received or file empty."
+            exit 1
+          fi
+          echo "✅ Live response saved to response_archive.json"
+
+      - name: Display response summary
+        if: steps.weekday.outputs.skip == 'false'
+        run: |
+          echo "📄 Companies House LIVE API response:"
+          sudo apt-get update -qq && sudo apt-get install -y jq -qq
+          jq '.company_status, .date_of_creation, .date_of_cessation' response_archive.json || cat response_archive.json
+
+      - name: Store live archival response
+        if: steps.weekday.outputs.skip == 'false'
+        run: |
+          mkdir -p data/archive_responses
+          TIMESTAMP=$(date +'%Y%m%d_%H%M')
+          cp response_archive.json "data/archive_responses/response_archive_${TIMESTAMP}.json"
+          echo "🗂️ Response archived at data/archive_responses/response_archive_${TIMESTAMP}.json"
+
+      - name: Append summary to orchestration-ledger.md
+        if: steps.weekday.outputs.skip == 'false'
+        run: |
+          TS=$(date -u +'%Y-%m-%d %H:%M UTC')
+          FILE="data/archive_responses/response_archive_$(date +'%Y%m%d_%H%M').json"
+          echo "| ${TS} | Quarterly archival verification | ${FILE} | CH Live API |" >> orchestration-ledger.md
+          echo "✅ Ledger updated"
+
+      - name: Commit ledger and data update
+        if: steps.weekday.outputs.skip == 'false'
+        env:
+          GIT_AUTHOR_NAME: "Eckohaus Bot"
+          GIT_AUTHOR_EMAIL: "info@eckohaus.co.uk"
+          GIT_COMMITTER_NAME: "Eckohaus Bot"
+          GIT_COMMITTER_EMAIL: "info@eckohaus.co.uk"
+        run: |
+          git add orchestration-ledger.md data/archive_responses/*.json || true
+          git commit -m "Quarterly archival verification (Eckohaus Ltd 2013–2021)" \
+            -m "Co-authored-by: system operator <wanda@openai.com>" \
+            -m "Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>" || echo "No changes to commit"
+          git push || true
