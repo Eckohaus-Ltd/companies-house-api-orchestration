@@ -4,18 +4,18 @@ _All notable updates and workflow events for this repository are documented here
 
 ---
 
-## [2025-10-20] — ✅ Sandbox API Verification Success
+## [2025-10-20] — 🔧 Sandbox Workflow Refactor
 **Summary:**  
-First successful end-to-end run of the Companies House **sandbox integration** for  
-**Eckohaus Ltd (Original, 2013–2021)** archival reference.
+Refined and hardened the **Companies House sandbox verification workflow**  
+(`.github/workflows/compliance-check-archive-sandbox.yml`) to improve test safety  
+and metadata handling consistency.
 
 ### 🧩 Details
-- Confirmed sandbox key authentication (`CH_API_KEY_ARCHIVE_SANDBOX`)  
-- Response archived under  
-  `data/sandbox_responses/response_sandbox_20251020_0204.json`  
-- Ledger auto-updated and committed (`commit a798f02`)  
-- Verified orchestration structure and secret injection  
-- Repository confirmed ready for quarterly **live archival** workflow runs
+- Added validation for secret `CH_API_KEY_ARCHIVE_SANDBOX`  
+- Standardised emoji and message formatting across workflow steps  
+- Restricted trigger to **manual mode only** (no scheduled runs)  
+- Enhanced metadata parsing and log consistency  
+- Improved ledger append behaviour for clearer commit trails  
 
 ---
 
@@ -24,6 +24,10 @@ First successful end-to-end run of the Companies House **sandbox integration** f
 Co-authored-by: system operator <wanda@openai.com>
 Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>
 ```
+
+✅ **Status:** Complete.  
+The sandbox workflow is now validated, traceable, and production-ready for final  
+transition toward live archival verification.
 
 ### 🔜 Next Step
 
