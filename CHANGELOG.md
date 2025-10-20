@@ -30,3 +30,21 @@ Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>
 Configure and test **`compliance-check-archive.yml`**  
 using **`CH_API_KEY_ARCHIVE`** for the quarterly schedule  
 (**January / April / July / October**).
+
+---
+<!--
+## [2026-01-01] — 🗓️ First Quarterly Archive Verification
+**Summary:**  
+Successfully executed first scheduled quarterly Companies House archival verification.  
+
+### 🧩 Details
+- Queried CH API using `CH_API_KEY_ARCHIVE`  
+- Response archived at `data/archive_responses/response_archive_20260101_0900.json`  
+- Ledger auto-updated and committed (`commit abc1234`)  
+
+### 🪶 Co-author Traceability
+```text
+Co-authored-by: system operator <wanda@openai.com>
+Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>
+```
+-->
