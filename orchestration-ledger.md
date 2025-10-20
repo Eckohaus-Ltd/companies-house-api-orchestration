@@ -20,6 +20,7 @@ via GitHub Actions or manual verification runs.
 | 2025-10-20 | Archive Initialisation | Created archival metadata configuration (`config/metadata.yml`). | Establishes static dataset for Eckohaus Ltd (Company No. 08573397). |
 | 2025-10-20 | Workflow Setup | Added quarterly verification workflow (`.github/workflows/compliance-check-archive.yml`). | Scheduled for January, April, July, October runs. |
 | 2025-10-20 | Sandbox Workflow Setup | Added sandbox archival verification workflow (`.github/workflows/compliance-check-archive-sandbox.yml`). | Uses secret `CH_API_KEY_ARCHIVE_SANDBOX` for mock API calls and saves responses to `data/sandbox_responses/`. |
+| 2025-10-20 03:35 UTC | Live Archival Workflow Activation | `.github/workflows/compliance-check-archive-live.yml` | CH Live API |
 | — | — | — | — |
 
 ---
@@ -43,12 +44,4 @@ Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>
 
 _Last synchronised via GitHub Actions on 2025-10-20._
 
----
 
-✅ **Summary**
-- Reflects all archival setup events to date.  
-- Documents both **live** and **sandbox** workflows.  
-- Keeps the co-author traceability block in your preferred format.  
-
-Would you like me to also prepare the brief **CHANGELOG.md** entry corresponding to these sandbox additions (for your root changelog continuity)?
-| 2025-10-20 02:04 UTC | Sandbox archival verification | data/sandbox_responses/response_sandbox_20251020_0204.json | CH Sandbox API |
