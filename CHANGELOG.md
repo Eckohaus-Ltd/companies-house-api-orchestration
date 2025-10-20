@@ -61,6 +61,35 @@ Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>
 
 ---
 
+## [2025-10-20] — ✅ Live Archival API Verification Success  
+**Summary:**  
+First successful live run of the Companies House archival API workflow  
+for **Eckohaus Ltd (Original, 2013–2021)** confirming valid key authentication,  
+ledger integration, and response archiving.
+
+### 🧩 Details  
+- Queried CH Live API using `CH_API_KEY_ARCHIVE`  
+- Response stored at  
+  `data/archive_responses/response_archive_20251020_0303.json`  
+- Ledger updated and committed automatically (`commit 2b9dcab`)  
+- Weekend guard correctly triggered (UK timezone logic validated)  
+- Verified repository automation integrity and archival dataset readiness  
+
+---
+
+### 🪶 Co-author Traceability  
+```text
+Co-authored-by: system operator <wanda@openai.com>  
+Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>
+```
+
+### 🔭 Observations
+- Companies House returned `null` values as expected (archived entity, no live profile).  
+- Confirms the **live API key** and **workflow structure** are active and reliable.  
+- Next live quarterly run scheduled for **January 2026**.
+  
+---
+
 <!--
 ## [2026-01-01] — 🗓️ First Quarterly Archive Verification
 **Summary:**  
