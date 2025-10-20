@@ -1,10 +1,10 @@
 name: Compliance Check (Companies House - Archive Sandbox)
 
 on:
-  workflow_dispatch:  # Manual trigger only — safe testing mode
+  workflow_dispatch:  # Manual trigger only — safe testing mode (no schedule)
 
 permissions:
-  contents: write  # allows saving test JSON and ledger updates
+  contents: write  # allows storing JSON responses and ledger updates
 
 jobs:
   check-archive-sandbox:
@@ -18,12 +18,21 @@ jobs:
       - name: Load archival metadata
         id: metadata
         run: |
-          echo "Loading archival metadata from config/metadata.yml"
+          echo "🧭 Loading archival metadata from config/metadata.yml"
           COMPANY_NAME=$(grep 'name:' config/metadata.yml | awk '{print $2" "$3}')
           COMPANY_NUMBER=$(grep 'company_number:' config/metadata.yml | awk '{print $2}')
           echo "company_name=$COMPANY_NAME" >> $GITHUB_OUTPUT
           echo "company_number=$COMPANY_NUMBER" >> $GITHUB_OUTPUT
           echo "✅ Loaded archival entity: $COMPANY_NAME ($COMPANY_NUMBER)"
+
+      - name: Validate sandbox API key presence
+        run: |
+          if [ -z "${{ secrets.CH_API_KEY_ARCHIVE_SANDBOX }}" ]; then
+            echo "❌ Secret CH_API_KEY_ARCHIVE_SANDBOX is missing or empty."
+            exit 1
+          else
+            echo "✅ CH_API_KEY_ARCHIVE_SANDBOX detected and valid for use."
+          fi
 
       - name: Query Companies House Sandbox API
         id: ch_query
