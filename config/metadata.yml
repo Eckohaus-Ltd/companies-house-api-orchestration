@@ -1,26 +1,28 @@
-# config/metadata.yml
 # ---------------------------------------------------------------------------
-# Archival metadata for Eckohaus Ltd (Original Entity: 2015–2021)
-# Used exclusively for offline verification within the Eckohaus-Ltd-Archive-API repository.
+# Core Metadata — Eckohaus Ltd (Original, 2013–2021)
+# Used by archival verification workflow (.github/workflows/compliance-check-archive.yml)
 # ---------------------------------------------------------------------------
 
 company:
   name: "Eckohaus Ltd (Original)"
   company_number: "08573397"
-  jurisdiction: "United Kingdom"
-  status: "Dissolved"
-  archive_period: "2015–2021"
+  jurisdiction: "UK"
   api_environment: "archive"
   api_secret_ref: "CH_API_KEY_ARCHIVE"
+  status: "dissolved"
+  date_of_incorporation: "2013-06-06"
+  date_of_cessation: "2021-01-15"
+
+filing_cycle:
+  accounts_last_filed: "2020-06-30"
+  confirmation_last_filed: "2020-06-06"
+  reminders_enabled: false
+  next_verification_check: "2026-01-01"
 
 metadata:
   created: "2025-10-20"
-  last_verified: "2025-10-20"
+  last_updated: "2025-10-20"
   maintainer: "Corvin Nehal Dhali"
   repository: "Eckohaus-Ltd-Archive-API"
-  environment_status: "archival-readonly"
-
-notes:
-  - "This metadata file preserves the historical record of the original Eckohaus Ltd (Company No. 08573397)."
-  - "Verification workflows run in offline mode only — no external API calls."
-  - "Acts as the root node of the Eckohaus organisational lineage for continuity tracking."
+  environment_status: "archived"
+  data_integrity: "verified-static"
