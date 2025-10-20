@@ -1,0 +1,47 @@
+# .github/workflows/compliance-check-archive.yml
+# ---------------------------------------------------------------------------
+# Static archival metadata verification for Eckohaus Ltd (2015–2021)
+# Validates local metadata.yml consistency and logs archival integrity.
+# ---------------------------------------------------------------------------
+
+name: Compliance Check (Archive Mode)
+
+on:
+  workflow_dispatch:  # Manual trigger from the Actions tab
+  schedule:
+    - cron: "0 9 * * 1"  # Optional: runs every Monday 09:00 UTC for verification
+
+jobs:
+  verify-archive-metadata:
+    name: Validate archival metadata
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify metadata.yml presence
+        run: |
+          if [ ! -f config/metadata.yml ]; then
+            echo "❌ metadata.yml not found in config/"
+            exit 1
+          else
+            echo "✅ metadata.yml found."
+          fi
+
+      - name: Validate Company Number (expected 08573397)
+        run: |
+          COMPANY_NUMBER=$(grep 'company_number:' config/metadata.yml | awk '{print $2}')
+          if [ "$COMPANY_NUMBER" != "08573397" ]; then
+            echo "❌ Company number mismatch: expected 08573397, got $COMPANY_NUMBER"
+            exit 1
+          else
+            echo "✅ Company number verified as $COMPANY_NUMBER"
+          fi
+
+      - name: Archive validation summary
+        run: |
+          mkdir -p logs
+          TS=$(date -u +'%Y-%m-%d %H:%M UTC')
+          echo "| ${TS} | Archive validation successful | config/metadata.yml verified | Offline mode |" >> logs/archive-validation-log.md
+          echo "🗂️ Validation entry appended to logs/archive-validation-log.md"
