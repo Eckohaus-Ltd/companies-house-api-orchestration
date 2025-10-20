@@ -1,16 +1,14 @@
-name: Compliance Check (Companies House - Archive)
+name: Compliance Check (Companies House - Archive Sandbox)
 
 on:
-  workflow_dispatch:  # Manual trigger from Actions tab
-  schedule:
-    - cron: "0 9 1 1,4,7,10 *"  # Run at 09:00 UTC on the 1st of Jan, Apr, Jul, Oct
+  workflow_dispatch:  # Manual trigger only — safe testing mode
 
 permissions:
-  contents: write  # allows appending to ledger if needed
+  contents: write  # allows saving test JSON and ledger updates
 
 jobs:
-  check-archival-status:
-    name: Quarterly Archive Verification (Eckohaus Ltd 2013–2021)
+  check-archive-sandbox:
+    name: Sandbox Archival Verification (Eckohaus Ltd 2013–2021)
     runs-on: ubuntu-latest
 
     steps:
@@ -27,47 +25,47 @@ jobs:
           echo "company_number=$COMPANY_NUMBER" >> $GITHUB_OUTPUT
           echo "✅ Loaded archival entity: $COMPANY_NAME ($COMPANY_NUMBER)"
 
-      - name: Query Companies House Archive API
+      - name: Query Companies House Sandbox API
         id: ch_query
         env:
-          CH_API_KEY: ${{ secrets.CH_API_KEY_ARCHIVE }}
+          CH_API_KEY: ${{ secrets.CH_API_KEY_ARCHIVE_SANDBOX }}
           COMPANY_NUMBER: ${{ steps.metadata.outputs.company_number }}
         run: |
-          echo "🔍 Querying Companies House API for archived company $COMPANY_NUMBER"
+          echo "🔍 Querying Companies House SANDBOX API for company $COMPANY_NUMBER"
           AUTH_HEADER=$(echo -n "$CH_API_KEY:" | base64)
           curl -s -H "Authorization: Basic $AUTH_HEADER" \
                "https://api.company-information.service.gov.uk/company/$COMPANY_NUMBER" \
-               -o response_archive.json
+               -o response_sandbox.json
 
-          if [ ! -s response_archive.json ]; then
+          if [ ! -s response_sandbox.json ]; then
             echo "❌ No response received or file empty."
             exit 1
           fi
-          echo "✅ Archive response saved to response_archive.json"
+          echo "✅ Sandbox response saved to response_sandbox.json"
 
-      - name: Display response summary
+      - name: Display sandbox response summary
         run: |
-          echo "📄 Companies House ARCHIVE API response:"
+          echo "📄 Companies House SANDBOX API response:"
           sudo apt-get update -qq && sudo apt-get install -y jq -qq
-          jq '.company_status, .date_of_creation, .date_of_cessation' response_archive.json || cat response_archive.json
+          jq . response_sandbox.json || cat response_sandbox.json
 
-      - name: Store archival response
+      - name: Store sandbox response
         if: always()
         run: |
-          mkdir -p data/archive_responses
+          mkdir -p data/sandbox_responses
           TIMESTAMP=$(date +'%Y%m%d_%H%M')
-          cp response_archive.json "data/archive_responses/response_archive_${TIMESTAMP}.json"
-          echo "🗂️ Response archived at data/archive_responses/response_archive_${TIMESTAMP}.json"
+          cp response_sandbox.json "data/sandbox_responses/response_sandbox_${TIMESTAMP}.json"
+          echo "🗂️ Response archived at data/sandbox_responses/response_sandbox_${TIMESTAMP}.json"
 
       - name: Append summary to orchestration-ledger.md
         if: success()
         run: |
           TS=$(date -u +'%Y-%m-%d %H:%M UTC')
-          FILE="data/archive_responses/response_archive_$(date +'%Y%m%d_%H%M').json"
-          echo "| ${TS} | Quarterly archival verification | ${FILE} | CH Live API |" >> orchestration-ledger.md
+          FILE="data/sandbox_responses/response_sandbox_$(date +'%Y%m%d_%H%M').json"
+          echo "| ${TS} | Sandbox archival verification | ${FILE} | CH Sandbox API |" >> orchestration-ledger.md
           echo "✅ Ledger updated"
 
-      - name: Commit archival update
+      - name: Commit sandbox update
         if: success()
         env:
           GIT_AUTHOR_NAME: "Eckohaus Bot"
@@ -75,8 +73,8 @@ jobs:
           GIT_COMMITTER_NAME: "Eckohaus Bot"
           GIT_COMMITTER_EMAIL: "info@eckohaus.co.uk"
         run: |
-          git add orchestration-ledger.md data/archive_responses/*.json || true
-          git commit -m "Quarterly archival Companies House verification (Eckohaus Ltd 2013–2021)" \
+          git add orchestration-ledger.md data/sandbox_responses/*.json || true
+          git commit -m "Sandbox archival verification (Eckohaus Ltd 2013–2021)" \
             -m "Co-authored-by: system operator <wanda@openai.com>" \
             -m "Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>" || echo "No changes to commit"
           git push || true
