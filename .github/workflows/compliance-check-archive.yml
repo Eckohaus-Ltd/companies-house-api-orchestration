@@ -1,47 +1,82 @@
-# .github/workflows/compliance-check-archive.yml
-# ---------------------------------------------------------------------------
-# Static archival metadata verification for Eckohaus Ltd (2015–2021)
-# Validates local metadata.yml consistency and logs archival integrity.
-# ---------------------------------------------------------------------------
-
-name: Compliance Check (Archive Mode)
+name: Compliance Check (Companies House - Archive)
 
 on:
-  workflow_dispatch:  # Manual trigger from the Actions tab
+  workflow_dispatch:  # Manual trigger from Actions tab
   schedule:
-    - cron: "0 9 * * 1"  # Optional: runs every Monday 09:00 UTC for verification
+    - cron: "0 9 1 1,4,7,10 *"  # Run at 09:00 UTC on the 1st of Jan, Apr, Jul, Oct
+
+permissions:
+  contents: write  # allows appending to ledger if needed
 
 jobs:
-  verify-archive-metadata:
-    name: Validate archival metadata
+  check-archival-status:
+    name: Quarterly Archive Verification (Eckohaus Ltd 2013–2021)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Verify metadata.yml presence
+      - name: Load archival metadata
+        id: metadata
         run: |
-          if [ ! -f config/metadata.yml ]; then
-            echo "❌ metadata.yml not found in config/"
-            exit 1
-          else
-            echo "✅ metadata.yml found."
-          fi
-
-      - name: Validate Company Number (expected 08573397)
-        run: |
+          echo "Loading archival metadata from config/metadata.yml"
+          COMPANY_NAME=$(grep 'name:' config/metadata.yml | awk '{print $2" "$3}')
           COMPANY_NUMBER=$(grep 'company_number:' config/metadata.yml | awk '{print $2}')
-          if [ "$COMPANY_NUMBER" != "08573397" ]; then
-            echo "❌ Company number mismatch: expected 08573397, got $COMPANY_NUMBER"
-            exit 1
-          else
-            echo "✅ Company number verified as $COMPANY_NUMBER"
-          fi
+          echo "company_name=$COMPANY_NAME" >> $GITHUB_OUTPUT
+          echo "company_number=$COMPANY_NUMBER" >> $GITHUB_OUTPUT
+          echo "✅ Loaded archival entity: $COMPANY_NAME ($COMPANY_NUMBER)"
 
-      - name: Archive validation summary
+      - name: Query Companies House Archive API
+        id: ch_query
+        env:
+          CH_API_KEY: ${{ secrets.CH_API_KEY_ARCHIVE }}
+          COMPANY_NUMBER: ${{ steps.metadata.outputs.company_number }}
         run: |
-          mkdir -p logs
+          echo "🔍 Querying Companies House API for archived company $COMPANY_NUMBER"
+          AUTH_HEADER=$(echo -n "$CH_API_KEY:" | base64)
+          curl -s -H "Authorization: Basic $AUTH_HEADER" \
+               "https://api.company-information.service.gov.uk/company/$COMPANY_NUMBER" \
+               -o response_archive.json
+
+          if [ ! -s response_archive.json ]; then
+            echo "❌ No response received or file empty."
+            exit 1
+          fi
+          echo "✅ Archive response saved to response_archive.json"
+
+      - name: Display response summary
+        run: |
+          echo "📄 Companies House ARCHIVE API response:"
+          sudo apt-get update -qq && sudo apt-get install -y jq -qq
+          jq '.company_status, .date_of_creation, .date_of_cessation' response_archive.json || cat response_archive.json
+
+      - name: Store archival response
+        if: always()
+        run: |
+          mkdir -p data/archive_responses
+          TIMESTAMP=$(date +'%Y%m%d_%H%M')
+          cp response_archive.json "data/archive_responses/response_archive_${TIMESTAMP}.json"
+          echo "🗂️ Response archived at data/archive_responses/response_archive_${TIMESTAMP}.json"
+
+      - name: Append summary to orchestration-ledger.md
+        if: success()
+        run: |
           TS=$(date -u +'%Y-%m-%d %H:%M UTC')
-          echo "| ${TS} | Archive validation successful | config/metadata.yml verified | Offline mode |" >> logs/archive-validation-log.md
-          echo "🗂️ Validation entry appended to logs/archive-validation-log.md"
+          FILE="data/archive_responses/response_archive_$(date +'%Y%m%d_%H%M').json"
+          echo "| ${TS} | Quarterly archival verification | ${FILE} | CH Live API |" >> orchestration-ledger.md
+          echo "✅ Ledger updated"
+
+      - name: Commit archival update
+        if: success()
+        env:
+          GIT_AUTHOR_NAME: "Eckohaus Bot"
+          GIT_AUTHOR_EMAIL: "info@eckohaus.co.uk"
+          GIT_COMMITTER_NAME: "Eckohaus Bot"
+          GIT_COMMITTER_EMAIL: "info@eckohaus.co.uk"
+        run: |
+          git add orchestration-ledger.md data/archive_responses/*.json || true
+          git commit -m "Quarterly archival Companies House verification (Eckohaus Ltd 2013–2021)" \
+            -m "Co-authored-by: system operator <wanda@openai.com>" \
+            -m "Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>" || echo "No changes to commit"
+          git push || true
