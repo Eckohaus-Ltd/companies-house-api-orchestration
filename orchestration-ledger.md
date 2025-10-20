@@ -51,3 +51,4 @@ _Last synchronised via GitHub Actions on 2025-10-20._
 - Keeps the co-author traceability block in your preferred format.  
 
 Would you like me to also prepare the brief **CHANGELOG.md** entry corresponding to these sandbox additions (for your root changelog continuity)?
+| 2025-10-20 02:04 UTC | Sandbox archival verification | data/sandbox_responses/response_sandbox_20251020_0204.json | CH Sandbox API |
