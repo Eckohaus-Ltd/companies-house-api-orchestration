@@ -101,3 +101,4 @@ _Last synchronised via GitHub Actions on 2025-10-19._
 | 2025-11-24 10:29 UTC | Weekly CH live check | Archived data/responses/response_weekly_20251124_1029.json | CH live API |
 | 2025-12-01 10:13 UTC | Live CH API check | Archived data/responses/response_live_20251201_1013.json | CH live API |
 | 2025-12-01 10:30 UTC | Weekly CH live check | Archived data/responses/response_weekly_20251201_1030.json | CH live API |
+| 2025-12-08 10:12 UTC | Live CH API check | Archived data/responses/response_live_20251208_1012.json | CH live API |
