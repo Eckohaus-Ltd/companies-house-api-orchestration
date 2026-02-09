@@ -119,3 +119,4 @@ _Last synchronised via GitHub Actions on 2025-10-19._
 | 2026-01-26 10:33 UTC | Weekly CH live check | Archived data/responses/response_weekly_20260126_1033.json | CH live API |
 | 2026-02-02 10:33 UTC | Live CH API check | Archived data/responses/response_live_20260202_1033.json | CH live API |
 | 2026-02-02 10:52 UTC | Weekly CH live check | Archived data/responses/response_weekly_20260202_1052.json | CH live API |
+| 2026-02-09 10:45 UTC | Live CH API check | Archived data/responses/response_live_20260209_1045.json | CH live API |
