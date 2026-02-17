@@ -48,3 +48,4 @@ _Last synchronised via GitHub Actions on 2025-10-20._
 | 2025-10-20 03:03 UTC | Quarterly archival verification | data/archive_responses/response_archive_20251020_0303.json | CH Live API |
 | 2026-01-01 09:23 UTC | Quarterly archival verification | data/archive_responses/response_archive_20260101_0923.json | CH Live API |
 | 2026-02-17 06:46 UTC | Quarterly archival verification | data/archive_responses/response_archive_20260217_0646.json | CH Live API |
+| 2026-02-17 06:47 UTC | Sandbox archival verification | data/sandbox_responses/response_sandbox_20260217_0647.json | CH Sandbox API |
