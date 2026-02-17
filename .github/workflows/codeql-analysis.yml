@@ -1,0 +1,189 @@
+# ---------------------------------------------------------------------------
+# Eckohaus Orchestration Pilot
+# CodeQL Security Analysis (Push on Main)
+# ---------------------------------------------------------------------------
+# Performs automated security scanning using CodeQL on every push to the main
+# branch. Results are uploaded as artifacts for line-by-line analysis and
+# integrated with compliance workflow outputs for comprehensive security review.
+# ---------------------------------------------------------------------------
+
+name: "CodeQL Analysis"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run CodeQL analysis weekly on Mondays at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
+        # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # If you wish to specify custom queries, you can do so here or in a config file.
+          # By default, queries listed here will override any specified in a config file.
+          # Prefix the list here with "+" to use these queries and those in the config file.
+
+          # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+          # queries: security-extended,security-and-quality
+
+      # Autobuild attempts to build any compiled languages (C/C++, C#, Go, or Java).
+      # If this step fails, then you should remove it and run the build manually
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+          output: sarif-results
+          upload: true
+
+      # Capture repository structure and branch context
+      - name: Capture repository structure
+        if: always()
+        run: |
+          echo "📊 Capturing repository structure and branch context..."
+          mkdir -p analysis-output
+
+          # Repository structure
+          echo "=== Repository Structure ===" > analysis-output/repository-structure.txt
+          tree -L 3 -a --gitignore || find . -maxdepth 3 -not -path '*/\.*' | sort >> analysis-output/repository-structure.txt
+
+          # Branch information
+          echo "" >> analysis-output/repository-structure.txt
+          echo "=== Branch Information ===" >> analysis-output/repository-structure.txt
+          git branch -a >> analysis-output/repository-structure.txt
+
+          # Current commit details
+          echo "" >> analysis-output/repository-structure.txt
+          echo "=== Current Commit ===" >> analysis-output/repository-structure.txt
+          git log -1 --pretty=format:"Commit: %H%nAuthor: %an <%ae>%nDate: %ad%nMessage: %s%n%b" >> analysis-output/repository-structure.txt
+
+          # File statistics
+          echo "" >> analysis-output/repository-structure.txt
+          echo "=== File Statistics ===" >> analysis-output/repository-structure.txt
+          find . -type f -not -path '*/\.git/*' | wc -l | xargs echo "Total files:" >> analysis-output/repository-structure.txt
+
+          echo "✅ Repository structure captured"
+
+      # Extract and organize CodeQL results
+      - name: Extract CodeQL results for analysis
+        if: always()
+        run: |
+          echo "📋 Extracting CodeQL results for line-by-line analysis..."
+          mkdir -p analysis-output/codeql-results
+
+          # Copy SARIF results if they exist
+          if [ -d "sarif-results" ]; then
+            cp -r sarif-results/* analysis-output/codeql-results/ 2>/dev/null || true
+          fi
+
+          # Create a summary of CodeQL findings
+          echo "=== CodeQL Analysis Summary ===" > analysis-output/codeql-summary.txt
+          echo "Analysis Date: $(date -u +'%Y-%m-%d %H:%M UTC')" >> analysis-output/codeql-summary.txt
+          echo "Language: ${{ matrix.language }}" >> analysis-output/codeql-summary.txt
+          echo "Branch: ${GITHUB_REF#refs/heads/}" >> analysis-output/codeql-summary.txt
+          echo "Commit: $GITHUB_SHA" >> analysis-output/codeql-summary.txt
+          echo "" >> analysis-output/codeql-summary.txt
+
+          # Extract findings from SARIF if available
+          if command -v jq &> /dev/null && [ -f "sarif-results/${{ matrix.language }}.sarif" ]; then
+            echo "=== Findings ===" >> analysis-output/codeql-summary.txt
+            jq -r '.runs[].results[] | "- \(.ruleId): \(.message.text) (\(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine))"' \
+              "sarif-results/${{ matrix.language }}.sarif" 2>/dev/null >> analysis-output/codeql-summary.txt || echo "No findings to report" >> analysis-output/codeql-summary.txt
+          else
+            echo "SARIF results not available for detailed parsing" >> analysis-output/codeql-summary.txt
+          fi
+
+          echo "✅ CodeQL results extracted"
+
+      # Create workflow execution metadata
+      - name: Create workflow metadata
+        if: always()
+        run: |
+          echo "📝 Creating workflow execution metadata..."
+          cat > analysis-output/workflow-metadata.json << EOF
+          {
+            "workflow": "CodeQL Analysis",
+            "run_id": "${{ github.run_id }}",
+            "run_number": "${{ github.run_number }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "actor": "${{ github.actor }}",
+            "event": "${{ github.event_name }}",
+            "ref": "${{ github.ref }}",
+            "ref_name": "${{ github.ref_name }}",
+            "sha": "${{ github.sha }}",
+            "repository": "${{ github.repository }}",
+            "language": "${{ matrix.language }}",
+            "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          }
+          EOF
+
+          echo "✅ Workflow metadata created"
+
+      # Upload artifacts for line-by-line analysis
+      - name: Upload analysis artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-analysis-${{ matrix.language }}-${{ github.run_number }}
+          path: |
+            analysis-output/
+            sarif-results/
+          retention-days: 90
+
+      # Update orchestration ledger
+      - name: Append to orchestration ledger
+        if: success()
+        run: |
+          TS=$(date -u +'%Y-%m-%d %H:%M UTC')
+          ARTIFACT="codeql-analysis-${{ matrix.language }}-${{ github.run_number }}"
+          echo "| ${TS} | CodeQL Analysis (${{ matrix.language }}) | Artifact: ${ARTIFACT} | Security scan on ${GITHUB_REF#refs/heads/} |" >> orchestration-ledger.md
+          echo "✅ Ledger updated with CodeQL run"
+
+      - name: Commit ledger update
+        if: success()
+        env:
+          GIT_AUTHOR_NAME: "Eckohaus Bot"
+          GIT_AUTHOR_EMAIL: "info@eckohaus.co.uk"
+          GIT_COMMITTER_NAME: "Eckohaus Bot"
+          GIT_COMMITTER_EMAIL: "info@eckohaus.co.uk"
+        run: |
+          git config user.name "Eckohaus Bot"
+          git config user.email "info@eckohaus.co.uk"
+          git add orchestration-ledger.md || true
+          git commit -m "CodeQL analysis: update orchestration ledger" \
+            -m "Co-authored-by: system operator <wanda@openai.com>" \
+            -m "Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>" || echo "No changes to commit"
+          git push || true
+
+# ---------------------------------------------------------------------------
+# Co-authored-by: system operator <wanda@openai.com>
+# Co-authored-by: system administrator <Corvin Nehal Dhali> <info@eckohaus.co.uk>
+# ---------------------------------------------------------------------------

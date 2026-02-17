@@ -25,6 +25,11 @@ data/responses/
 !data/responses/
 !data/sandbox_responses/
 
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
 # IDE and editor folders
 .vscode/
 .idea/

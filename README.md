@@ -55,9 +55,27 @@ Eckohaus-Orchestration-Pilot/
 | `compliance-check.yml` | Sandbox test workflow for CH API validation | ✅ Active |
 | `compliance-check-live.yml` | Live CH data retrieval & audit logging | 🧩 In propagation stage |
 | `compliance-check-weekly.yml` | Scheduled production cycle (Mon 10:00 UTC) | ⏸ Development phase |
+| `codeql-analysis.yml` | Security scanning with CodeQL (push on main) | ✅ Active |
 
 Each workflow interacts with `config/metadata.yml` for company details and API environment parameters.  
 Live responses are archived in `/data/responses/` and recorded in `orchestration-ledger.md`.
+
+### Artifact Analysis & Reporting
+
+All workflows now include comprehensive artifact generation for line-by-line analysis:
+
+- **Repository Structure**: Captured at each workflow execution
+- **Branch & Commit Context**: Full git metadata integration
+- **Workflow Metadata**: Execution details in JSON format
+- **Artifact Retention**: 90 days for historical analysis
+
+**Analysis Tools** (in `.github/scripts/`):
+- `artifact-analyzer.py` - Line-by-line artifact analysis
+- `comparative-analyzer.py` - Cross-workflow comparative analysis integrating CodeQL with compliance data
+
+**Documentation**:
+- [Artifact Analysis Guide](docs/ARTIFACT_ANALYSIS_GUIDE.md) - Comprehensive usage guide
+- [Scripts README](.github/scripts/README.md) - Technical documentation for analysis scripts
 
 ---
 

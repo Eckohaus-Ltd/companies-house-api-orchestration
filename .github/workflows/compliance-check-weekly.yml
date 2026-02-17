@@ -104,6 +104,57 @@ jobs:
           cp response_weekly.json "data/responses/response_weekly_${TIMESTAMP}.json"
           echo "🗂️ Weekly response archived at data/responses/response_weekly_${TIMESTAMP}.json"
 
+      - name: Create workflow analysis artifacts
+        if: always()
+        run: |
+          echo "📊 Creating workflow analysis artifacts..."
+          mkdir -p analysis-output
+
+          # Capture repository structure
+          echo "=== Repository Structure ===" > analysis-output/repository-structure.txt
+          tree -L 3 -a --gitignore || find . -maxdepth 3 -not -path '*/\.*' | sort >> analysis-output/repository-structure.txt
+
+          # Branch and commit information
+          echo "" >> analysis-output/repository-structure.txt
+          echo "=== Branch Information ===" >> analysis-output/repository-structure.txt
+          git branch -a >> analysis-output/repository-structure.txt
+          echo "" >> analysis-output/repository-structure.txt
+          echo "=== Current Commit ===" >> analysis-output/repository-structure.txt
+          git log -1 --pretty=format:"Commit: %H%nAuthor: %an <%ae>%nDate: %ad%nMessage: %s" >> analysis-output/repository-structure.txt
+
+          # Workflow execution metadata
+          cat > analysis-output/workflow-metadata.json << EOF
+          {
+            "workflow": "Compliance Check (Companies House - Weekly)",
+            "run_id": "${{ github.run_id }}",
+            "run_number": "${{ github.run_number }}",
+            "actor": "${{ github.actor }}",
+            "event": "${{ github.event_name }}",
+            "ref": "${{ github.ref }}",
+            "sha": "${{ github.sha }}",
+            "repository": "${{ github.repository }}",
+            "company_number": "${{ steps.metadata.outputs.company_number }}",
+            "api_environment": "live",
+            "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          }
+          EOF
+
+          # Copy response for artifact
+          cp response_weekly.json analysis-output/ 2>/dev/null || true
+          cp status_code.txt analysis-output/ 2>/dev/null || true
+
+          echo "✅ Analysis artifacts created"
+
+      - name: Upload workflow artifacts for analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-weekly-${{ github.run_number }}
+          path: |
+            analysis-output/
+            data/responses/response_weekly_*.json
+          retention-days: 90
+
       - name: Append summary to orchestration-ledger.md
         if: success()
         run: |
