@@ -10,6 +10,9 @@ Thumbs.db
 *.tmp
 *.bak
 
+# Generated analysis reports (can be regenerated)
+workflow-log-analysis.md
+
 # Local environment and credentials
 .env
 secrets/
