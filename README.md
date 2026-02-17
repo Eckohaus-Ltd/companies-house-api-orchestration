@@ -38,6 +38,7 @@ Eckohaus-Ltd-Archive-API/
 - Historical Company Number reference (2015 – 2021): `08573397`.  
 - Data represents the **first Eckohaus Ltd** entity prior to restructuring.  
 - When integrated under a future **Eckohaus Organization**, this archive will serve as the **root node** of the Eckohaus lineage map.
+- For detailed workflow analysis, see [workflow-log-analysis.md](workflow-log-analysis.md).
 
 ---
 
